@@ -10,10 +10,12 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const auth = require("./middleware/auth");
 
-app.use(express.json());
-app.use(cookieParser());
-app.use(sanitize());
+app.use(express.json()); // JSON parser
+app.use(cookieParser()); // Cookie parser
 
+app.use(sanitize()); // To prevent from XSS
+
+//SignUp route
 app.post("/signup", async (req, res) => {
   try {
     const { email, password, secretKey } = req.body;
@@ -31,14 +33,18 @@ app.post("/signup", async (req, res) => {
       });
     }
 
+    //encoding base64
     const myPassword = Buffer.from(password).toString("base64");
+
+    //hashing secretKey
     const mySecretKey = await bcrypt.hash(secretKey, 10);
 
-    const user = await User.create({
+    await User.create({
       email: email.toLowerCase(),
       password: myPassword,
       secretKey: mySecretKey,
     });
+
     res.status(201).json({ message: "registered success" });
   } catch (error) {
     res.status(400).json({
@@ -70,7 +76,7 @@ app.post("/signin", async (req, res) => {
         }
       );
       const options = {
-        expires: new Date(Date.now() + 2*60*60*1000),
+        expires: new Date(Date.now() + 2 * 60 * 60 * 1000),
         httpOnly: true,
       };
       res.status(200).cookie("token", token, options).json({
@@ -82,7 +88,7 @@ app.post("/signin", async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(400).json({
+    res.status(401).json({
       message: "Coudn't signing in.",
     });
   }
