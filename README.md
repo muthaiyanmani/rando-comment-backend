@@ -9,3 +9,5 @@ Step 2:
 Step 3:
     npm run dev - dev environment
     npm run start - production environment
+
+You can use this live demo URL: https://rando-comment-app.herokuapp.com/
