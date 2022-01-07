@@ -1,7 +1,9 @@
 require("dotenv").config();
 require("./config/database").connect();
 const express = require("express");
+const sanitize = require("express-mongo-sanitize");
 const User = require("./models/user");
+const Comment = require("./models/comments");
 const app = express();
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
@@ -10,49 +12,38 @@ const auth = require("./middleware/auth");
 
 app.use(express.json());
 app.use(cookieParser());
-
-app.get("/dashboard", auth, async (req, res) => {
-  res.send("<h1>Hello World</h1>");
-});
+app.use(sanitize());
 
 app.post("/signup", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, secretKey } = req.body;
 
-    if (!(email && password)) {
+    if (!(email && password && secretKey)) {
       res.status(400).json({
-        error: "All fields are mandatory",
+        message: "All fields are mandatory",
       });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       res.status(401).json({
-        error: "Email already exists",
+        message: "Email already exists",
       });
     }
 
-    const myEncPassword = await bcrypt.hash(password, 10);
+    const myPassword = Buffer.from(password).toString("base64");
+    const mySecretKey = await bcrypt.hash(secretKey, 10);
 
     const user = await User.create({
       email: email.toLowerCase(),
-      password: myEncPassword,
+      password: myPassword,
+      secretKey: mySecretKey,
     });
-
-    const token = jwt.sign(
-      {
-        user_id: user.user_id,
-        email,
-      },
-      process.env.SECRET_KEY,
-      {
-        expiresIn: "2h",
-      }
-    );
-    user.token = token;
-    res.status(201).json(user);
+    res.status(201).json({ message: "registered success" });
   } catch (error) {
-    console.log("Something went wrong ::", error);
+    res.status(400).json({
+      message: "Couldn't sign up",
+    });
   }
 });
 
@@ -61,13 +52,13 @@ app.post("/signin", async (req, res) => {
     const { email, password } = req.body;
     if (!(email && password)) {
       res.status(400).json({
-        error: "All fields are mandatory",
+        message: "All fields are mandatory",
       });
     }
 
     const user = await User.findOne({ email });
 
-    if (user && (await bcrypt.compare(password, user.password))) {
+    if (user && Buffer.from(password).toString("base64") === user?.password) {
       const token = jwt.sign(
         {
           user_id: user._id,
@@ -78,23 +69,64 @@ app.post("/signin", async (req, res) => {
           expiresIn: "2h",
         }
       );
-
-      // res.status(201).json({ email, token });
       const options = {
-        expires: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        expires: new Date(Date.now() + 2*60*60*1000),
         httpOnly: true,
       };
       res.status(200).cookie("token", token, options).json({
-        success: true,
-        token,
+        message: "signin success",
       });
     } else {
       res.status(400).json({
-        error: "Email or password not matched",
+        message: "Email or password not matched",
       });
     }
   } catch (error) {
-    console.log("Something went wrong :: ", error);
+    res.status(400).json({
+      message: "Coudn't signing in.",
+    });
+  }
+});
+
+app.post("/getPassword", async (req, res) => {
+  try {
+    const { email, secretKey } = req.body;
+    if (!(email && secretKey)) {
+      res.status(400).json({
+        message: "All fields are mandatory",
+      });
+    }
+    const user = await User.findOne({ email });
+    if (user && (await bcrypt.compare(secretKey, user?.secretKey))) {
+      res.status(200).json({
+        message: Buffer.from(user?.password, "base64").toString("ascii"),
+      });
+    } else {
+      res.status(400).json({ message: "Email or secreKey not found" });
+    }
+  } catch (error) {
+    res.status(400).json({ message: "Unable to verify secretKey password" });
+  }
+});
+
+app.post("/comment", auth, async (req, res) => {
+  const { comment } = req.body;
+  const { email } = req.user;
+  const myComment = new Comment({ comment, email });
+  try {
+    await myComment.save();
+    res.status(200).json({ message: "comment save success" });
+  } catch (error) {
+    res.status(400).json({ message: "Unable to create a comment" });
+  }
+});
+
+app.get("/comments", auth, async (req, res) => {
+  try {
+    const data = await Comment.find();
+    res.status(200).send({ message: data });
+  } catch (error) {
+    res.status(400).json({ message: "Unable to fetch a comment" });
   }
 });
 module.exports = app;

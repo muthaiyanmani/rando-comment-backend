@@ -9,7 +9,7 @@ const userSchema = new Schema({
     password:{
         type:String
     },
-    token:{
+    secretKey:{
         type:String
     }
 })
