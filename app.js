@@ -29,6 +29,8 @@ app.post('/signup',async (req,res)=>{
        password:myEncPassword,
        token
    })
+
+   const 
 })
 
 module.exports = app;
