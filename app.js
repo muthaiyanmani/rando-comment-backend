@@ -1,9 +1,9 @@
 require("dotenv").config();
 require("./config/database").connect();
 const express = require("express");
-const cookie = require('cookie')
+const cookie = require("cookie");
 const sanitize = require("express-mongo-sanitize");
-const cors = require('cors')
+const cors = require("cors");
 const User = require("./models/user");
 const Comment = require("./models/comments");
 const app = express();
@@ -12,12 +12,12 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const auth = require("./middleware/auth");
 
-const corsOptions ={
-  origin:'https://rando-comment-app.vercel.app', 
-  credentials:true,            //access-control-allow-credentials:true
-  optionSuccessStatus:200,
-}
-app.use(cors(corsOptions))
+const corsOptions = {
+  origin: "https://rando-comment-app.vercel.app",
+  credentials: true, //access-control-allow-credentials:true
+  optionSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 
 app.use(express.json()); // JSON parser
 app.use(cookieParser()); // Cookie parser
@@ -87,11 +87,9 @@ app.post("/signin", async (req, res) => {
       const options = {
         expires: new Date(Date.now() + 2 * 60 * 60 * 1000),
         httpOnly: true,
-        path:"/"
+        path: "/",
       };
-      res.setHeader('Set-Cookie', [
-        cookie.serialize('token', token,options)
-      ])
+      res.setHeader("Set-Cookie", [cookie.serialize("token", token, options)]);
       res.status(200).json({
         message: "signin success",
       });
@@ -142,8 +140,9 @@ app.post("/comment", auth, async (req, res) => {
 
 app.get("/comments", auth, async (req, res) => {
   try {
+    const { email } = req.user;
     const data = await Comment.find();
-    res.status(200).send({ message: data });
+    res.status(200).send({ message: data,email });
   } catch (error) {
     res.status(400).json({ message: "Unable to fetch a comment" });
   }
