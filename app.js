@@ -13,7 +13,7 @@ const jwt = require("jsonwebtoken");
 const auth = require("./middleware/auth");
 
 const corsOptions = {
-  origin: "https://rando-comment-app.vercel.app",
+  origin: "http://localhost:3000",
   credentials: true, //access-control-allow-credentials:true
   optionSuccessStatus: 200,
 };
@@ -43,7 +43,9 @@ app.post("/signup", async (req, res) => {
     }
 
     //encoding base64
-    const myPassword = Buffer.from(password).toString("base64");
+    const round1 = Buffer.from(password).toString("base64");
+    //encoding the result of base64
+    const myPassword = Buffer.from(round1).toString("base64");
 
     //hashing secretKey
     const mySecretKey = await bcrypt.hash(secretKey, 10);
@@ -73,7 +75,8 @@ app.post("/signin", async (req, res) => {
 
     const user = await User.findOne({ email });
 
-    if (user && Buffer.from(password).toString("base64") === user?.password) {
+    const round1 = Buffer.from(password).toString("base64");
+    if (user && Buffer.from(round1).toString("base64") === user?.password) {
       const token = jwt.sign(
         {
           user_id: user._id,
@@ -115,8 +118,10 @@ app.post("/getPassword", async (req, res) => {
     }
     const user = await User.findOne({ email });
     if (user && (await bcrypt.compare(secretKey, user?.secretKey))) {
+      const round1 = Buffer.from(user?.password, "base64").toString("ascii");
+      const myPassword = Buffer.from(round1, "base64").toString("ascii");
       res.status(200).json({
-        message: Buffer.from(user?.password, "base64").toString("ascii"),
+        message: myPassword,
       });
     } else {
       res.status(400).json({ message: "Email or secreKey not found" });
@@ -142,7 +147,7 @@ app.get("/comments", auth, async (req, res) => {
   try {
     const { email } = req.user;
     const data = await Comment.find();
-    res.status(200).send({ message: data,email });
+    res.status(200).send({ message: data, email });
   } catch (error) {
     res.status(400).json({ message: "Unable to fetch a comment" });
   }
