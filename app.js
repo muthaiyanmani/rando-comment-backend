@@ -1,6 +1,7 @@
 require("dotenv").config();
 require("./config/database").connect();
 const express = require("express");
+const cookie = require('cookie')
 const sanitize = require("express-mongo-sanitize");
 const cors = require('cors')
 const User = require("./models/user");
@@ -11,7 +12,13 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const auth = require("./middleware/auth");
 
-app.use(cors())
+const corsOptions ={
+  origin:'https://rando-comment-app.vercel.app', 
+  credentials:true,            //access-control-allow-credentials:true
+  optionSuccessStatus:200,
+}
+app.use(cors(corsOptions))
+
 app.use(express.json()); // JSON parser
 app.use(cookieParser()); // Cookie parser
 
@@ -80,8 +87,12 @@ app.post("/signin", async (req, res) => {
       const options = {
         expires: new Date(Date.now() + 2 * 60 * 60 * 1000),
         httpOnly: true,
+        path:"/"
       };
-      res.status(200).cookie("token", token, options).json({
+      res.setHeader('Set-Cookie', [
+        cookie.serialize('token', token,options)
+      ])
+      res.status(200).json({
         message: "signin success",
       });
     } else {
