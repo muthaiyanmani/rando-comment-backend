@@ -2,6 +2,7 @@ require("dotenv").config();
 require("./config/database").connect();
 const express = require("express");
 const sanitize = require("express-mongo-sanitize");
+const cors = require('cors')
 const User = require("./models/user");
 const Comment = require("./models/comments");
 const app = express();
@@ -10,6 +11,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const auth = require("./middleware/auth");
 
+app.use(cors())
 app.use(express.json()); // JSON parser
 app.use(cookieParser()); // Cookie parser
 
