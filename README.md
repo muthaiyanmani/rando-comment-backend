@@ -2,6 +2,7 @@ Step 1: Create a .env file in root of the folder
     PORT = // port to run your application
     DB_URL = // mongodb URL Example: mongodb+srv://admin:<password>@cluster0.wr33g.mongodb.net/test
     SECRET_KEY = // secret key for hashing secretKey
+    FRONTEND_URL = // frontend url for cors protection
 
 Step 2: 
     npm install  - to install all dependencies

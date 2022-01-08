@@ -13,7 +13,7 @@ const jwt = require("jsonwebtoken");
 const auth = require("./middleware/auth");
 
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: process.env.FRONTEND_URL,
   credentials: true, //access-control-allow-credentials:true
   optionSuccessStatus: 200,
 };
@@ -76,6 +76,7 @@ app.post("/signin", async (req, res) => {
     const user = await User.findOne({ email });
 
     const round1 = Buffer.from(password).toString("base64");
+
     if (user && Buffer.from(round1).toString("base64") === user?.password) {
       const token = jwt.sign(
         {
