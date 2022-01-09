@@ -92,6 +92,8 @@ app.post("/signin", async (req, res) => {
         expires: new Date(Date.now() + 2 * 60 * 60 * 1000),
         httpOnly: true,
         path: "/",
+        sameSite:'none',
+        secure:true
       };
       res.setHeader("Set-Cookie", [cookie.serialize("token", token, options)]);
       res.status(200).json({
